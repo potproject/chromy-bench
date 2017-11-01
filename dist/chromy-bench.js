@@ -70,6 +70,8 @@
 "use strict";
 
 
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 var _chromy = __webpack_require__(1);
 
 var _chromy2 = _interopRequireDefault(_chromy);
@@ -80,78 +82,98 @@ var _commander2 = _interopRequireDefault(_commander);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-//Commander
-_commander2.default.version('0.0.1').usage('chromy-bench [options] <url>').option('-c, --count <n>', 'URL Access Count', parseInt).option('-nocache, --no-cache', 'Not Using Browser Cache').option('-nocookie, --no-cookie', 'Not Using Browser Cookies').option('-v, --visible', 'Visible Chrome Browser').option('-ua, --user-agent <ua>', 'Setting User Agent (pc/mobile)', /^(pc|mobile)$/i, 'pc').option('-setcookie, --set-cookie <cookie>', 'Set Cookie Params (JSONText)').parse(process.argv);
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var url = _commander2.default.args;
-var count = _commander2.default.count ? _commander2.default.count : 1;
-var noCache = _commander2.default.noCache ? true : false;
-var noCookie = _commander2.default.noCookie ? true : false;
-var userAgent = _commander2.default.userAgent ? _commander2.default.userAgent : 'pc';
-var visible = _commander2.default.visible ? true : false;
-var setCookie = _commander2.default.setCookie ? JSON.parse(_commander2.default.setCookie) : null;
-if (url.length < 1) {
+//Commander
+_commander2.default.version('0.0.1').usage('chromy-bench [options] <url>').option('-c, --count <n>', 'URL Access Count', parseInt).option('-nocache, --no-cache', 'Not Using Browser Cache').option('-nocookie, --no-cookie', 'Not Using Browser Cookies').option('-v, --visible', 'Visible Chrome Browser').option('-ua, --user-agent <ua>', 'Setting User Agent (pc/mobile)', /^(pc|mobile)$/i, 'pc').option('-setcookie, --set-cookie <cookie>', 'Set Cookie Params (JSONText)').option('-i --interval <interval>', 'Web Browser Access Interval (ms)', parseInt, '100').parse(process.argv);
+
+if (_commander2.default.args.length < 1) {
     console.log("invaild Paramaters <url>");
     process.exit(1);
 }
-var sleep = function sleep(msec) {
-    return new Promise(function (resolve) {
-        return setTimeout(resolve, msec);
-    });
-};
 
-var chromy = new _chromy2.default({
-    visible: visible
-});
-main(chromy, url[0], count, userAgent, noCache, noCookie, setCookie);
+var ChromyBenchClass = function () {
+    function ChromyBenchClass(program) {
+        _classCallCheck(this, ChromyBenchClass);
 
-async function main(chromy, url) {
-    var count = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
-    var userAgent = arguments[3];
-    var noCache = arguments[4];
-    var noCookie = arguments[5];
-    var setCookie = arguments[6];
-
-    try {
-        var firstLoad = true;
-        if (userAgent === "mobile") {
-            await chromy.emulate('iPhone6');
-        }
-        if (setCookie) {
-            await chromy.setCookie(setCookie);
-        }
-        await chromy.start();
-        await sleep(1000);
-        while (count > 0) {
-            var start_ms = getTime();
-            await chromy.goto(url, {
-                waitLoadEvent: false
-            });
-            await chromy.waitLoadEvent();
-            if (firstLoad) {
-                console.log("FirstLoad:" + (getTime() - start_ms) + "ms");
-                firstLoad = false;
-            } else {
-                console.log("Load:" + (getTime() - start_ms) + "ms");
-            }
-            count--;
-            if (noCache) {
-                await chromy.clearBrowserCache();
-            }
-            if (noCookie) {
-                await chromy.clearAllCookies();
-            }
-            await sleep(100);
-        }
-        await chromy.close();
-    } catch (e) {
-        console.error(e);
+        this.urlArgs = program.args;
+        this.count = program.count ? program.count : 1;
+        this.noCache = program.noCache ? true : false;
+        this.noCookie = program.noCookie ? true : false;
+        this.userAgent = program.userAgent ? program.userAgent : 'pc';
+        this.visible = program.visible ? true : false;
+        this.setCookie = program.setCookie ? JSON.parse(program.setCookie) : null;
+        this.interval = program.interval ? program.interval : 100;
+        this.chromy = new _chromy2.default({
+            visible: this.visible
+        });
     }
-}
 
-function getTime() {
-    return new Date().getTime();
-}
+    _createClass(ChromyBenchClass, [{
+        key: 'sleep',
+        value: async function sleep(msec) {
+            return new Promise(function (resolve) {
+                return setTimeout(resolve, msec);
+            });
+        }
+    }, {
+        key: 'getTimeNow',
+        value: function getTimeNow() {
+            return new Date().getTime();
+        }
+    }, {
+        key: 'run',
+        value: async function run() {
+            try {
+                var firstLoad = true;
+                if (this.userAgent === "mobile") {
+                    await this.chromy.emulate('iPhone6');
+                }
+                if (this.setCookie) {
+                    await this.chromy.setCookie(setCookie);
+                }
+                await this.chromy.start();
+                await this.sleep(1000);
+                while (this.count > 0) {
+                    var start_ms = this.getTimeNow();
+                    await this.chromy.goto(this.urlArgs[0], {
+                        waitLoadEvent: false
+                    });
+                    await this.chromy.waitLoadEvent();
+                    var rr = await this.chromy.client.Network.responseReceived();
+                    console.log(rr);
+                    var lf = await this.chromy.client.Network.loadingFinished();
+                    console.log(lf);
+                    if (firstLoad) {
+                        console.log("FirstLoad:" + (this.getTimeNow() - start_ms) + "ms");
+                        firstLoad = false;
+                    } else {
+                        console.log("Load:" + (this.getTimeNow() - start_ms) + "ms");
+                    }
+                    this.count--;
+                    if (this.noCache) {
+                        await this.chromy.clearBrowserCache();
+                    }
+                    if (this.noCookie) {
+                        await this.chromy.clearAllCookies();
+                        if (this.setCookie) {
+                            await this.chromy.setCookie(setCookie);
+                        }
+                    }
+                    await this.sleep(this.interval);
+                }
+                await this.chromy.close();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }]);
+
+    return ChromyBenchClass;
+}();
+
+var cbc = new ChromyBenchClass(_commander2.default);
+cbc.run();
 
 /***/ }),
 /* 1 */
