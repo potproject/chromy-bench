@@ -82,6 +82,8 @@ var _commander2 = _interopRequireDefault(_commander);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 //Commander
@@ -132,6 +134,9 @@ var ChromyBenchClass = function () {
                 if (this.setCookie) {
                     await this.chromy.setCookie(setCookie);
                 }
+
+                var timerResultDOMContentLoaded = [];
+                var timerResultLoad = [];
                 await this.chromy.start();
                 await this.sleep(1000);
                 while (this.count > 0) {
@@ -139,16 +144,17 @@ var ChromyBenchClass = function () {
                     await this.chromy.goto(this.urlArgs[0], {
                         waitLoadEvent: false
                     });
-                    await this.chromy.waitLoadEvent();
-                    var rr = await this.chromy.client.Network.responseReceived();
-                    console.log(rr);
-                    var lf = await this.chromy.client.Network.loadingFinished();
-                    console.log(lf);
+                    await this.chromy.client.Page.domContentEventFired();
+                    var DOMContentLoaded = this.getTimeNow() - start_ms;
+                    await this.chromy.client.Page.loadEventFired();
+                    var Load = this.getTimeNow() - start_ms;
+                    timerResultDOMContentLoaded.push(DOMContentLoaded);
+                    timerResultLoad.push(Load);
                     if (firstLoad) {
-                        console.log("FirstLoad:" + (this.getTimeNow() - start_ms) + "ms");
+                        console.log("DOMContentLoaded " + DOMContentLoaded + "ms Load " + Load + "ms");
                         firstLoad = false;
                     } else {
-                        console.log("Load:" + (this.getTimeNow() - start_ms) + "ms");
+                        console.log("DOMContentLoaded " + DOMContentLoaded + "ms Load " + Load + "ms");
                     }
                     this.count--;
                     if (this.noCache) {
@@ -163,6 +169,13 @@ var ChromyBenchClass = function () {
                     await this.sleep(this.interval);
                 }
                 await this.chromy.close();
+
+                //result
+                console.log("--- " + this.urlArgs[0] + " statistics ---");
+                console.log("DOMContentLoaded:");
+                console.log("round-trip min/avg/max/stddev = " + statistical.min(timerResultDOMContentLoaded) + "/" + statistical.avg(timerResultDOMContentLoaded) + "/" + statistical.max(timerResultDOMContentLoaded) + "/" + statistical.stddev(timerResultDOMContentLoaded) + " ms");
+                console.log("Load:");
+                console.log("round-trip min/avg/max/stddev = " + statistical.min(timerResultLoad) + "/" + statistical.avg(timerResultLoad) + "/" + statistical.max(timerResultLoad) + "/" + statistical.stddev(timerResultLoad) + " ms");
             } catch (e) {
                 console.error(e);
             }
@@ -172,6 +185,25 @@ var ChromyBenchClass = function () {
     return ChromyBenchClass;
 }();
 
+var statistical = {
+    sum: function sum(arr) {
+        return arr.reduce(function (prev, current) {
+            return prev + current;
+        });
+    },
+    min: function min(arr) {
+        return Math.min.apply(Math, _toConsumableArray(arr));
+    },
+    avg: function avg(arr) {
+        return parseInt(this.sum(arr) / arr.length);
+    },
+    max: function max(arr) {
+        return Math.max.apply(Math, _toConsumableArray(arr));
+    },
+    stddev: function stddev(arr) {
+        return parseInt(Math.sqrt(this.avg(arr)));
+    }
+};
 var cbc = new ChromyBenchClass(_commander2.default);
 cbc.run();
 

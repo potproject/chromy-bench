@@ -14,7 +14,7 @@ program
     .option('-i --interval <interval>', 'Web Browser Access Interval (ms)', parseInt, '100')
     .parse(process.argv);
 
-if(program.args.length < 1){
+if (program.args.length < 1) {
     console.log("invaild Paramaters <url>");
     process.exit(1);
 }
@@ -49,6 +49,9 @@ class ChromyBenchClass {
             if (this.setCookie) {
                 await this.chromy.setCookie(setCookie);
             }
+
+            let timerResultDOMContentLoaded = [];
+            let timerResultLoad = [];
             await this.chromy.start();
             await this.sleep(1000);
             while (this.count > 0) {
@@ -56,12 +59,17 @@ class ChromyBenchClass {
                 await this.chromy.goto(this.urlArgs[0], {
                     waitLoadEvent: false
                 });
-                await this.chromy.waitLoadEvent();
+                await this.chromy.client.Page.domContentEventFired();
+                let DOMContentLoaded = this.getTimeNow() - start_ms;
+                await this.chromy.client.Page.loadEventFired();
+                let Load = this.getTimeNow() - start_ms;
+                timerResultDOMContentLoaded.push(DOMContentLoaded);
+                timerResultLoad.push(Load);
                 if (firstLoad) {
-                    console.log("FirstLoad:" + (this.getTimeNow() - start_ms) + "ms");
+                    console.log("DOMContentLoaded " + DOMContentLoaded + "ms Load " + Load + "ms");
                     firstLoad = false;
                 } else {
-                    console.log("Load:" + (this.getTimeNow() - start_ms) + "ms");
+                    console.log("DOMContentLoaded " + DOMContentLoaded + "ms Load " + Load + "ms");
                 }
                 this.count--;
                 if (this.noCache) {
@@ -76,11 +84,45 @@ class ChromyBenchClass {
                 await this.sleep(this.interval);
             }
             await this.chromy.close();
+
+            //result
+            console.log("--- " + this.urlArgs[0] + " statistics ---");
+            console.log("DOMContentLoaded:");
+            console.log("round-trip min/avg/max/stddev = " +
+                statistical.min(timerResultDOMContentLoaded) + "/" +
+                statistical.avg(timerResultDOMContentLoaded) + "/" +
+                statistical.max(timerResultDOMContentLoaded) + "/" +
+                statistical.stddev(timerResultDOMContentLoaded) + " ms");
+            console.log("Load:");
+            console.log("round-trip min/avg/max/stddev = " +
+            statistical.min(timerResultLoad) + "/" +
+            statistical.avg(timerResultLoad) + "/" +
+            statistical.max(timerResultLoad) + "/" +
+            statistical.stddev(timerResultLoad) + " ms");
         } catch (e) {
             console.error(e);
         }
     }
 }
 
+const statistical  = {
+    sum(arr) {
+        return arr.reduce((prev, current) =>
+            (prev + current)
+        );
+    },
+    min(arr) {
+        return Math.min(...arr);
+    },
+    avg(arr) {
+        return parseInt(this.sum(arr) / arr.length);
+    },
+    max(arr){
+        return Math.max(...arr);
+    },
+    stddev(arr) {
+        return parseInt(Math.sqrt(this.avg(arr)));
+    }
+}
 const cbc = new ChromyBenchClass(program);
 cbc.run();
