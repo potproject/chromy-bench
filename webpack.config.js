@@ -20,8 +20,14 @@ module.exports = {
         loaders: [{
             exclude: /node_modules/,
             loader: 'babel-loader',
-            query: {
-                presets: ['es2015']
+            options: {
+                "presets": [
+                    ["env", {
+                        "targets": {
+                            "node": "current"
+                        }
+                    }]
+                ],
             }
         }]
     }
