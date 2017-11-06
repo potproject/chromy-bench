@@ -5,6 +5,7 @@ module.exports = {
     externals: [nodeExternals()],
     entry: {
         "chromy-bench": __dirname + "/src/index.es6",
+        "chromy-bench-test": __dirname + "/test/index.es6",
     },
     output: {
         path: __dirname + '/dist',

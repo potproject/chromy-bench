@@ -60,7 +60,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ 	return __webpack_require__(__webpack_require__.s = 1);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -70,33 +70,89 @@
 "use strict";
 
 
-var _chromy = __webpack_require__(1);
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+const statistical = {
+    sum(arr) {
+        return arr.reduce((prev, current) => prev + current);
+    },
+    min(arr) {
+        return Math.min(...arr);
+    },
+    avg(arr) {
+        return parseInt(this.sum(arr) / arr.length);
+    },
+    max(arr) {
+        return Math.max(...arr);
+    },
+    stddev(arr) {
+        return parseInt(Math.sqrt(this.avg(arr)));
+    }
+};
 
-var _chromy2 = _interopRequireDefault(_chromy);
+exports.default = statistical;
 
-var _commander = __webpack_require__(2);
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
 
-var _commander2 = _interopRequireDefault(_commander);
+"use strict";
+
+
+var _chromybenchclass = __webpack_require__(2);
+
+var _chromybenchclass2 = _interopRequireDefault(_chromybenchclass);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-//Commander
-_commander2.default.version('0.0.1').usage('chromy-bench [options] <url>').option('-c, --count <n>', 'URL Access Count', parseInt).option('-nocache, --no-cache', 'Not Using Browser Cache').option('-nocookie, --no-cookie', 'Not Using Browser Cookies').option('-v, --visible', 'Visible Chrome Browser').option('-ua, --user-agent <ua>', 'Setting User Agent (pc/mobile)', /^(pc|mobile)$/i, 'pc').option('-setcookie, --set-cookie <cookie>', 'Set Cookie Params (JSONText)').option('-i --interval <interval>', 'Web Browser Access Interval (ms)', parseInt, '100').parse(process.argv);
+const cbc = new _chromybenchclass2.default();
+cbc.run();
 
-if (_commander2.default.args.length < 1) {
-    console.log("invaild Paramaters <url>");
-    process.exit(1);
-}
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _chromy = __webpack_require__(3);
+
+var _chromy2 = _interopRequireDefault(_chromy);
+
+var _commander = __webpack_require__(4);
+
+var _commander2 = _interopRequireDefault(_commander);
+
+var _statistical = __webpack_require__(0);
+
+var _statistical2 = _interopRequireDefault(_statistical);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 class ChromyBenchClass {
-    constructor(program) {
-        this.urlArgs = program.args;
-        this.count = program.count ? program.count : 1;
-        this.noCache = program.noCache ? true : false;
-        this.noCookie = program.noCookie ? true : false;
-        this.userAgent = program.userAgent ? program.userAgent : 'pc';
-        this.visible = program.visible ? true : false;
-        this.setCookie = program.setCookie ? JSON.parse(program.setCookie) : null;
-        this.interval = program.interval ? program.interval : 100;
+    constructor() {
+        //Commander
+        _commander2.default.version('0.0.1').usage('chromy-bench [options] <url>').option('-c, --count <n>', 'URL Access Count', parseInt).option('-nocache, --no-cache', 'Not Using Browser Cache').option('-nocookie, --no-cookie', 'Not Using Browser Cookies').option('-v, --visible', 'Visible Chrome Browser').option('-ua, --user-agent <ua>', 'Setting User Agent (pc/mobile)', /^(pc|mobile)$/i, 'pc').option('-setcookie, --set-cookie <cookie>', 'Set Cookie Params (JSONText)').option('-i --interval <interval>', 'Web Browser Access Interval (ms)', parseInt, '100').parse(process.argv);
+
+        if (_commander2.default.args.length < 1) {
+            console.log("invaild Paramaters <url>");
+            process.exit(1);
+            return;
+        }
+
+        this.urlArgs = _commander2.default.args;
+        this.count = _commander2.default.count ? _commander2.default.count : 1;
+        this.noCache = _commander2.default.noCache ? true : false;
+        this.noCookie = _commander2.default.noCookie ? true : false;
+        this.userAgent = _commander2.default.userAgent ? _commander2.default.userAgent : 'pc';
+        this.visible = _commander2.default.visible ? true : false;
+        this.setCookie = _commander2.default.setCookie ? JSON.parse(_commander2.default.setCookie) : null;
+        this.interval = _commander2.default.interval ? _commander2.default.interval : 100;
         this.chromy = new _chromy2.default({
             visible: this.visible
         });
@@ -157,43 +213,24 @@ class ChromyBenchClass {
             //result
             console.log("--- " + this.urlArgs[0] + " statistics ---");
             console.log("DOMContentLoaded:");
-            console.log("round-trip min/avg/max/stddev = " + statistical.min(timerResultDOMContentLoaded) + "/" + statistical.avg(timerResultDOMContentLoaded) + "/" + statistical.max(timerResultDOMContentLoaded) + "/" + statistical.stddev(timerResultDOMContentLoaded) + " ms");
+            console.log("round-trip min/avg/max/stddev = " + _statistical2.default.min(timerResultDOMContentLoaded) + "/" + _statistical2.default.avg(timerResultDOMContentLoaded) + "/" + _statistical2.default.max(timerResultDOMContentLoaded) + "/" + _statistical2.default.stddev(timerResultDOMContentLoaded) + " ms");
             console.log("Load:");
-            console.log("round-trip min/avg/max/stddev = " + statistical.min(timerResultLoad) + "/" + statistical.avg(timerResultLoad) + "/" + statistical.max(timerResultLoad) + "/" + statistical.stddev(timerResultLoad) + " ms");
+            console.log("round-trip min/avg/max/stddev = " + _statistical2.default.min(timerResultLoad) + "/" + _statistical2.default.avg(timerResultLoad) + "/" + _statistical2.default.max(timerResultLoad) + "/" + _statistical2.default.stddev(timerResultLoad) + " ms");
         } catch (e) {
             console.error(e);
         }
     }
 }
-
-const statistical = {
-    sum(arr) {
-        return arr.reduce((prev, current) => prev + current);
-    },
-    min(arr) {
-        return Math.min(...arr);
-    },
-    avg(arr) {
-        return parseInt(this.sum(arr) / arr.length);
-    },
-    max(arr) {
-        return Math.max(...arr);
-    },
-    stddev(arr) {
-        return parseInt(Math.sqrt(this.avg(arr)));
-    }
-};
-const cbc = new ChromyBenchClass(_commander2.default);
-cbc.run();
+exports.default = ChromyBenchClass;
 
 /***/ }),
-/* 1 */
+/* 3 */
 /***/ (function(module, exports) {
 
 module.exports = require("chromy");
 
 /***/ }),
-/* 2 */
+/* 4 */
 /***/ (function(module, exports) {
 
 module.exports = require("commander");
