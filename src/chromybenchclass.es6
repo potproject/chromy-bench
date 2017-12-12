@@ -9,12 +9,12 @@ export default class ChromyBenchClass {
         .version('0.0.1')
         .usage('chromy-bench [options] <url>')
         .option('-c, --count <n>', 'URL Access Count', parseInt)
-        .option('-nocache, --no-cache', 'Not Using Browser Cache')
-        .option('-nocookie, --no-cookie', 'Not Using Browser Cookies')
+        .option('--nocache', 'Not Using Browser Cache')
+        .option('--nocookie', 'Not Using Browser Cookies')
         .option('-v, --visible', 'Visible Chrome Browser')
-        .option('-ua, --user-agent <ua>', 'Setting User Agent (pc/mobile)', /^(pc|mobile)$/i, 'pc')
-        .option('-setcookie, --set-cookie <cookie>', 'Set Cookie Params (JSONText)')
-        .option('-i --interval <interval>', 'Web Browser Access Interval (ms)', parseInt, '100')
+        .option('-ua, --useragent <ua>', 'Setting User Agent (pc/mobile)', /^(pc|mobile)$/i, 'pc')
+        .option('--setcookie <setcookie>', 'Set Cookie Params (JSONText)')
+        .option('-i --interval <interval>', 'Web Browser Access Interval (ms)', parseInt, 100)
         .parse(process.argv);
 
         if (program.args.length < 1) {
@@ -25,11 +25,15 @@ export default class ChromyBenchClass {
 
         this.urlArgs = program.args;
         this.count = program.count ? program.count : 1;
-        this.noCache = program.noCache ? true : false;
-        this.noCookie = program.noCookie ? true : false;
-        this.userAgent = program.userAgent ? program.userAgent : 'pc';
+        this.noCache = program.nocache ? true : false;
+        this.noCookie = program.nocookie ? true : false;
+        this.userAgent = program.useragent ? program.userAgent : 'pc';
         this.visible = program.visible ? true : false;
-        this.setCookie = program.setCookie ? JSON.parse(program.setCookie) : null;
+        /**
+         * SetCookie Example
+         * chromy-bench http://localhost/ -v --setcookie '{"url": "http://localhost/", "name": "name1", "value": "val1"}'
+         */
+        this.setCookie = program.setcookie ? JSON.parse(program.setcookie) : null;
         this.interval = program.interval ? program.interval : 100;
         this.chromy = new Chromy({
             visible: this.visible
@@ -49,8 +53,8 @@ export default class ChromyBenchClass {
             if (this.userAgent === "mobile") {
                 await this.chromy.emulate('iPhone6');
             }
-            if (this.setCookie) {
-                await this.chromy.setCookie(setCookie);
+            if (this.setCookie !== null) {
+                await this.chromy.setCookie(this.setCookie);
             }
 
             let timerResultDOMContentLoaded = [];
@@ -59,7 +63,7 @@ export default class ChromyBenchClass {
             await this.sleep(1000);
             while (this.count > 0) {
                 let start_ms = this.getTimeNow();
-                await this.chromy.goto(this.urlArgs[0], {
+                this.chromy.goto(this.urlArgs[0], {
                     waitLoadEvent: false
                 });
                 await this.chromy.client.Page.domContentEventFired();
@@ -80,8 +84,8 @@ export default class ChromyBenchClass {
                 }
                 if (this.noCookie) {
                     await this.chromy.clearAllCookies();
-                    if (this.setCookie) {
-                        await this.chromy.setCookie(setCookie);
+                    if (this.setcookie) {
+                        await this.chromy.setCookie(this.setCookie);
                     }
                 }
                 await this.sleep(this.interval);

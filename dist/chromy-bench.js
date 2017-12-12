@@ -137,7 +137,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 class ChromyBenchClass {
     constructor() {
         //Commander
-        _commander2.default.version('0.0.1').usage('chromy-bench [options] <url>').option('-c, --count <n>', 'URL Access Count', parseInt).option('-nocache, --no-cache', 'Not Using Browser Cache').option('-nocookie, --no-cookie', 'Not Using Browser Cookies').option('-v, --visible', 'Visible Chrome Browser').option('-ua, --user-agent <ua>', 'Setting User Agent (pc/mobile)', /^(pc|mobile)$/i, 'pc').option('-setcookie, --set-cookie <cookie>', 'Set Cookie Params (JSONText)').option('-i --interval <interval>', 'Web Browser Access Interval (ms)', parseInt, '100').parse(process.argv);
+        _commander2.default.version('0.0.1').usage('chromy-bench [options] <url>').option('-c, --count <n>', 'URL Access Count', parseInt).option('--nocache', 'Not Using Browser Cache').option('--nocookie', 'Not Using Browser Cookies').option('-v, --visible', 'Visible Chrome Browser').option('-ua, --useragent <ua>', 'Setting User Agent (pc/mobile)', /^(pc|mobile)$/i, 'pc').option('--setcookie <setcookie>', 'Set Cookie Params (JSONText)').option('-i --interval <interval>', 'Web Browser Access Interval (ms)', parseInt, 100).parse(process.argv);
 
         if (_commander2.default.args.length < 1) {
             console.log("invaild Paramaters <url>");
@@ -147,11 +147,15 @@ class ChromyBenchClass {
 
         this.urlArgs = _commander2.default.args;
         this.count = _commander2.default.count ? _commander2.default.count : 1;
-        this.noCache = _commander2.default.noCache ? true : false;
-        this.noCookie = _commander2.default.noCookie ? true : false;
-        this.userAgent = _commander2.default.userAgent ? _commander2.default.userAgent : 'pc';
+        this.noCache = _commander2.default.nocache ? true : false;
+        this.noCookie = _commander2.default.nocookie ? true : false;
+        this.userAgent = _commander2.default.useragent ? _commander2.default.userAgent : 'pc';
         this.visible = _commander2.default.visible ? true : false;
-        this.setCookie = _commander2.default.setCookie ? JSON.parse(_commander2.default.setCookie) : null;
+        /**
+         * SetCookie Example
+         * chromy-bench http://localhost/ -v --setcookie '{"url": "http://localhost/", "name": "name1", "value": "val1"}'
+         */
+        this.setCookie = _commander2.default.setcookie ? JSON.parse(_commander2.default.setcookie) : null;
         this.interval = _commander2.default.interval ? _commander2.default.interval : 100;
         this.chromy = new _chromy2.default({
             visible: this.visible
@@ -171,8 +175,8 @@ class ChromyBenchClass {
             if (this.userAgent === "mobile") {
                 await this.chromy.emulate('iPhone6');
             }
-            if (this.setCookie) {
-                await this.chromy.setCookie(setCookie);
+            if (this.setCookie !== null) {
+                await this.chromy.setCookie(this.setCookie);
             }
 
             let timerResultDOMContentLoaded = [];
@@ -181,7 +185,7 @@ class ChromyBenchClass {
             await this.sleep(1000);
             while (this.count > 0) {
                 let start_ms = this.getTimeNow();
-                await this.chromy.goto(this.urlArgs[0], {
+                this.chromy.goto(this.urlArgs[0], {
                     waitLoadEvent: false
                 });
                 await this.chromy.client.Page.domContentEventFired();
@@ -202,8 +206,8 @@ class ChromyBenchClass {
                 }
                 if (this.noCookie) {
                     await this.chromy.clearAllCookies();
-                    if (this.setCookie) {
-                        await this.chromy.setCookie(setCookie);
+                    if (this.setcookie) {
+                        await this.chromy.setCookie(this.setCookie);
                     }
                 }
                 await this.sleep(this.interval);
